@@ -26,7 +26,17 @@ class BernardServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->package('bernard/laravel');
+        if (method_exists($this, 'package')) {
+            $this->package('bernard/laravel');
+        } else {
+            $this->publishes([
+                __DIR__ . '/config/config.php' => config_path('packages/bernard/laravel/config.php')
+            ]);
+
+            $this->publishes([
+                __DIR__ . '/database/migrations/' => database_path('migrations')
+            ], 'migrations');
+        }
     }
 
     /**
@@ -51,15 +61,6 @@ class BernardServiceProvider extends ServiceProvider
     {
         return array();
     }
-
-    /**
-     * Overload package name to allow
-     */
-    protected function getPackageNamespace($package, $namespace)
-    {
-        return 'bernard';
-    }
-
 
     /**
      * Register currently available Bernard drivers + custom for extension

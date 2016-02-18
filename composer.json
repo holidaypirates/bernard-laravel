@@ -19,12 +19,12 @@
 
     "require": {
         "php"                : ">=5.3.0",
-        "illuminate/support" : "~4.0.0",
+        "illuminate/support" : "~4|~5",
         "bernard/bernard"    : ">=0.6,<1.0.0"
     },
 
     "require-dev": {
-        "illuminate/foundation" : "~4.0.0",
+        "illuminate/foundation" : "~4|~5",
         "orchestra/testbench"   : "~2.0.0",
         "mockery/mockery"       : "~0.7.0"
     },
