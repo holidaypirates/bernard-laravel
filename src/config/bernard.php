@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
 
     /*
      ***********
@@ -8,7 +8,7 @@ return array(
      ***********
      */
 
-    'services' => array(
+    'services' => [
 
         // reference a service class name
         'Foo' => '\\My\\Service\\Foo'
@@ -18,7 +18,7 @@ return array(
 
         // reference an IoC item
         //'Baz' => 'some.ioc.key',
-    ),
+    ],
 
 
     /*
@@ -76,4 +76,4 @@ return array(
     // Optional: List of alternative encoder classes
     //'encoders' => array('\\Symfony\\Component\\Serializer\\Encoder\\JsonEncoder')
 
-);
+];
