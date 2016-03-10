@@ -12,6 +12,6 @@ class Consumer extends \Illuminate\Support\Facades\Facade
      */
     protected static function getFacadeAccessor()
     {
-        return 'bernard:consumer';
+        return 'bernard.consumer';
     }
 }

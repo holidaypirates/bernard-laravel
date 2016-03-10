@@ -12,7 +12,7 @@ class Producer extends \Illuminate\Support\Facades\Facade
      */
     protected static function getFacadeAccessor()
     {
-        return 'bernard:producer';
+        return 'bernard.producer';
     }
 
     /**

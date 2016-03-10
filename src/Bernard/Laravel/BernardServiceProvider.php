@@ -123,7 +123,7 @@ class BernardServiceProvider extends ServiceProvider
     protected function registerSerializers()
     {
         $this->app['bernard.serializer'] = $this->app->share(function ($app) {
-            $serializer = $app['config']['bernard::serializer'] ?: 'naive';
+            $serializer = $app['config']['bernard::serializer'] ?: 'symfony';
 
             if (is_object($serializer)) {
                 return $serializer;
