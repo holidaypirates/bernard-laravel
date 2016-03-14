@@ -154,7 +154,6 @@ class BernardServiceProvider extends ServiceProvider
         $this->app['bernard.event.dispatcher'] = $this->app->share(function ($app) {
             $dispatcher = new EventDispatcher;
             $dispatcher->addSubscriber(new ErrorLogSubscriber);
-            $dispatcher->addSubscriber(new LoggerSubscriber($app['log']));
             return $dispatcher;
         });
 
