@@ -5,16 +5,15 @@ namespace Bernard\Laravel;
 use Bernard\Consumer;
 use Bernard\Driver\PredisDriver;
 use Bernard\Driver\SqsDriver;
+use Bernard\EventListener\ErrorLogSubscriber;
+use Bernard\EventListener\LoggerSubscriber;
 use Bernard\Laravel\Driver\EloquentDriver;
 use Bernard\Producer;
 use Bernard\QueueFactory\PersistentFactory;
-use Bernard\Serializer\SymfonySerializer;
-use Bernard\ServiceResolver\ObjectResolver;
-use Bernard\Symfony\DefaultMessageNormalizer;
-use Bernard\Symfony\EnvelopeNormalizer;
+use Bernard\Router\SimpleRouter;
+use Bernard\Serializer as BernardSerializer;
 use Illuminate\Support\ServiceProvider;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class BernardServiceProvider extends ServiceProvider
 {
@@ -67,7 +66,8 @@ class BernardServiceProvider extends ServiceProvider
             $queueUrls = $app['config']['bernard.queue_urls'] ?: [];
             $prefetch = $app['config']['bernard.prefetch'];
 
-            return new SqsDriver(is_object($connection) ? $connection : $app[$connection], $queueUrls, $prefetch);
+            $connectionInstance = is_object($connection) ? $connection : $app[$connection];
+            return new SqsDriver($connectionInstance, $queueUrls, $prefetch);
         });
 
         // Predis
@@ -75,7 +75,8 @@ class BernardServiceProvider extends ServiceProvider
             $connection = $app['config']['bernard.connection'] ?: 'predis';
             $prefetch = $app['config']['bernard.prefetch'];
 
-            return new PredisDriver(is_object($connection) ? $connection : $app[$connection], $prefetch);
+            $connectionInstance = is_object($connection) ? $connection : $app[$connection];
+            return new PredisDriver($connectionInstance, $prefetch);
         });
 
         // Eloquent
@@ -108,43 +109,7 @@ class BernardServiceProvider extends ServiceProvider
     protected function registerSerializers()
     {
         $this->app['bernard.serializer'] = $this->app->share(function ($app) {
-            $serializer = $app['config']['bernard.serializer'] ?: 'symfony';
-
-            if (is_object($serializer)) {
-                return $serializer;
-            }
-
-            return $app['bernard.serializer.' . $serializer];
-        });
-
-        // serializer
-        $this->app['bernard.serializer.symfony'] = $this->app->share(function ($app) {
-            $normalizers = array(
-                new EnvelopeNormalizer,
-                new DefaultMessageNormalizer
-            );
-
-            if (isset($app['config']['bernard.normalizers'])) {
-                $normalizers = array_map(function ($class) {
-                    return is_object($class) ? $class : new $class;
-                }, (array)$app['config']['bernard.normalizers']);
-            }
-
-            // the serializer class
-            $serializerClass = isset($app['config']['bernard.serializer'])
-                ? $app['config']['bernard.serializer']
-                : '\\Bernard\\Serializer\\SymfonySerializer';
-
-            // list of encoders
-            $encoders = isset($app['config']['bernard.encoders'])
-                ? array_map(function ($class) {
-                    return is_object($class) ? $class : new $class;
-                }, (array)$app['config']['bernard.encoders'])
-                : array(new JsonEncoder);
-
-            return new $serializerClass(
-                new Serializer($normalizers, $encoders)
-            );
+            return new BernardSerializer;
         });
     }
 
@@ -173,20 +138,27 @@ class BernardServiceProvider extends ServiceProvider
             return new PersistentFactory($app['bernard.driver'], $app['bernard.serializer']);
         });
 
+        // event dispatcher
+        $this->app['bernard.event.dispatcher'] = $this->app->share(function ($app) {
+            $dispatcher = new EventDispatcher;
+            $dispatcher->addSubscriber(new ErrorLogSubscriber);
+            $dispatcher->addSubscriber(new LoggerSubscriber($app['log']));
+            return $dispatcher;
+        });
+
         // the producer
         $this->app['bernard.producer'] = $this->app->share(function ($app) {
-            return new Producer($app['bernard.queues']);
+            return new Producer($app['bernard.queues'], $app['bernard.event.dispatcher']);
         });
 
         // the consumer
         $this->app['bernard.consumer'] = $this->app->share(function ($app) {
-            $resolver = new ObjectResolver;
-            $services = $app['config']['bernard.services'];
-            foreach ($services as $name => $class) {
-                $resolver->register($name, is_object($class) ? $class : (isset($app[$class]) ? $app[$class] : $class));
-            }
 
-            return new Consumer($resolver);
+            $services = $app['config']['bernard.services'];
+
+            $router = new SimpleRouter($services);
+
+            return new Consumer($router, $this->app['bernard.event.dispatcher']);
         });
     }
 
@@ -204,8 +176,10 @@ class BernardServiceProvider extends ServiceProvider
         });
 
         $this->commands(
-            ['bernard.command.consume',
-            'bernard.command.produce']
+            [
+                'bernard.command.consume',
+                'bernard.command.produce'
+            ]
         );
     }
 }
