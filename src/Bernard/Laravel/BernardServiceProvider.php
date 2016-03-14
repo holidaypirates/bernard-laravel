@@ -74,9 +74,9 @@ class BernardServiceProvider extends ServiceProvider
     {
         // SQS
         $this->app['bernard.driver.sqs'] = $this->app->share(function ($app) {
-            $connection = $app['config']['bernard.connection'] ?: 'sqs';
-            $queueUrls = $app['config']['bernard.queue_urls'] ?: [];
-            $prefetch = $app['config']['bernard.prefetch'];
+            $connection = $app['config']['bernard::connection'] ?: 'sqs';
+            $queueUrls = $app['config']['bernard::queue_urls'] ?: [];
+            $prefetch = $app['config']['bernard::prefetch'];
 
             $connectionInstance = is_object($connection) ? $connection : $app[$connection];
             return new SqsDriver($connectionInstance, $queueUrls, $prefetch);
@@ -84,8 +84,8 @@ class BernardServiceProvider extends ServiceProvider
 
         // Predis
         $this->app['bernard.driver.predis'] = $this->app->share(function ($app) {
-            $connection = $app['config']['bernard.connection'] ?: 'predis';
-            $prefetch = $app['config']['bernard.prefetch'];
+            $connection = $app['config']['bernard::connection'] ?: 'predis';
+            $prefetch = $app['config']['bernard::prefetch'];
 
             $connectionInstance = is_object($connection) ? $connection : $app[$connection];
             return new PredisDriver($connectionInstance, $prefetch);
@@ -100,17 +100,17 @@ class BernardServiceProvider extends ServiceProvider
         $this->app['bernard.driver.custom'] = $this->app->share(function ($app) {
 
             // setup driver class name
-            $className = studly_case($app['config']['bernard.driver']);
+            $className = studly_case($app['config']['bernard::driver']);
             if (false === strpos($className, '\\')) {
                 $className = '\\Bernard\\Driver\\' . $className . 'Driver';
             }
 
             // determine key holding connection in IoC
-            $connection = $app['config']['bernard.connection'];
+            $connection = $app['config']['bernard::connection'];
             $connection = is_object($connection) ? $connection : $app[$connection];
 
             // setup driver
-            if ($options = $app['config']['bernard.options']) {
+            if ($options = $app['config']['bernard::options']) {
                 return new $className($connection, $options);
             } else {
                 return new $className($connection);
@@ -132,7 +132,7 @@ class BernardServiceProvider extends ServiceProvider
     {
         // actual driver
         $this->app['bernard.driver'] = $this->app->share(function ($app) {
-            $driver = $app['config']['bernard.driver'];
+            $driver = $app['config']['bernard::driver'];
             if (is_object($driver)) {
                 return $driver;
             } else {
@@ -166,7 +166,7 @@ class BernardServiceProvider extends ServiceProvider
         // the consumer
         $this->app['bernard.consumer'] = $this->app->share(function ($app) {
 
-            $services = $app['config']['bernard.services'];
+            $services = $app['config']['bernard::services'];
 
             $router = new SimpleRouter($services);
 
