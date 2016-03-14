@@ -43,17 +43,13 @@ class BernardConsumeCommand extends Command
     public function fire()
     {
         $pullQueue  = $this->argument('queue');
-        $failQueue  = $this->option('fail-queue');
-        $maxRetries = $this->option('max-retries');
         $maxRuntime = $this->option('max-runtime');
         $queues     = $this->laravel['bernard.queues'];
 
 
         $this->laravel['bernard.consumer']->consume(
             $queues->create($pullQueue),
-            $failQueue ? $queues->create($failQueue) : null,
             array(
-                'max-retries' => $maxRetries,
                 'max-runtime' => $maxRuntime
             )
         );
@@ -79,8 +75,6 @@ class BernardConsumeCommand extends Command
     protected function getOptions()
     {
         return array(
-            array('fail-queue', null, InputOption::VALUE_OPTIONAL, 'Queue to re-order failed.', null),
-            array('max-retries', null, InputOption::VALUE_OPTIONAL, 'Max amount of retries.', 5),
             array('max-runtime', null, InputOption::VALUE_OPTIONAL, 'Max time for consuming messages.', null),
         );
     }
