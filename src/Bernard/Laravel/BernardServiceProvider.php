@@ -19,19 +19,20 @@ class BernardServiceProvider extends ServiceProvider
 {
 
     /**
+     * Indicates if loading of the provider is deferred.
+     *
+     * @var bool
+     */
+    protected $defer = true;
+
+    /**
      * Bootstrap the application events.
      *
      * @return void
      */
     public function boot()
     {
-        $this->publishes([
-            __DIR__ . '/../../config/bernard.php' => config_path('bernard.php')
-        ], 'config');
-
-        $this->publishes([
-            __DIR__ . '/../../migrations/' => database_path('migrations')
-        ], 'migrations');
+        $this->package('bernard/laravel');
     }
 
     /**
@@ -48,12 +49,23 @@ class BernardServiceProvider extends ServiceProvider
     }
 
     /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return array();
+    }
+
+    /**
      * Overload package name to allow
      */
     protected function getPackageNamespace($package, $namespace)
     {
         return 'bernard';
     }
+
 
     /**
      * Register currently available Bernard drivers + custom for extension
