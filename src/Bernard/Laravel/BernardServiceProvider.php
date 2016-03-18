@@ -55,7 +55,7 @@ class BernardServiceProvider extends ServiceProvider
      */
     public function provides()
     {
-        return array();
+        return ['bernard.consumer', 'bernard.producer'];
     }
 
     /**
