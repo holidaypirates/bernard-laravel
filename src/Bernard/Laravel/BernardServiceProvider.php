@@ -8,11 +8,14 @@ use Bernard\Driver\SqsDriver;
 use Bernard\EventListener\ErrorLogSubscriber;
 use Bernard\EventListener\LoggerSubscriber;
 use Bernard\Laravel\Driver\EloquentDriver;
+use Bernard\Normalizer\DefaultMessageNormalizer;
+use Bernard\Normalizer\EnvelopeNormalizer;
 use Bernard\Producer;
 use Bernard\QueueFactory\PersistentFactory;
 use Bernard\Router\SimpleRouter;
 use Bernard\Serializer as BernardSerializer;
 use Illuminate\Support\ServiceProvider;
+use Normalt\Normalizer\AggregateNormalizer;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class BernardServiceProvider extends ServiceProvider
@@ -109,7 +112,19 @@ class BernardServiceProvider extends ServiceProvider
     protected function registerSerializers()
     {
         $this->app['bernard.serializer'] = $this->app->share(function ($app) {
-            return new BernardSerializer;
+
+            $normalizers = [
+                new EnvelopeNormalizer,
+                new DefaultMessageNormalizer,
+            ];
+
+            if (isset($app['config']['bernard.normalizers'])) {
+                $normalizers = array_map(function ($class) {
+                    return is_object($class) ? $class : new $class;
+                }, (array)$app['config']['bernard.normalizers']);
+            }
+
+            return new BernardSerializer(new AggregateNormalizer($normalizers));
         });
     }
 
